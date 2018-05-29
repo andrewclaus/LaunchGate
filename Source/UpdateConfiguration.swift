@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 public struct UpdateConfiguration: Dialogable, Rememberable {
 
   var version = ""

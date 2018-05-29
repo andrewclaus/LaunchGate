@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 /// Protocol to which any configuration parser must conform.
 public protocol LaunchGateParser {
 

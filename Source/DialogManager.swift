@@ -8,81 +8,80 @@
 
 import Foundation
 
-
 protocol Dialogable {
   var message: String { get }
 }
 
 class DialogManager {
 
-  typealias RememberableDialogSubject = protocol<Dialogable, Rememberable>
+  typealias RememberableDialogSubject = Dialogable & Rememberable
 
   enum DialogType {
-    case Alert(blocking: Bool)
-    case OptionalUpdate(updateURL: NSURL)
-    case RequiredUpdate(updateURL: NSURL)
+    case alert(blocking: Bool)
+    case optionalUpdate(updateURL: NSURL)
+    case requiredUpdate(updateURL: NSURL)
   }
 
   func displayAlertDialog(alertConfig: RememberableDialogSubject, blocking: Bool) {
-    let dialog = createAlertController(.Alert(blocking: blocking), message: alertConfig.message)
+    let dialog = createAlertController(type: .alert(blocking: blocking), message: alertConfig.message)
 
-    displayAlertController(dialog) { () -> Void in
+    displayAlertController(alert: dialog) { () -> Void in
       if !blocking {
-        Memory.remember(alertConfig)
+        Memory.remember(item: alertConfig)
       }
     }
   }
 
   func displayRequiredUpdateDialog(updateConfig: Dialogable, updateURL: NSURL) {
-    let dialog = createAlertController(.RequiredUpdate(updateURL: updateURL), message: updateConfig.message)
+    let dialog = createAlertController(type: .requiredUpdate(updateURL: updateURL), message: updateConfig.message)
 
-    displayAlertController(dialog, completion: nil)
+    displayAlertController(alert: dialog, completion: nil)
   }
 
   func displayOptionalUpdateDialog(updateConfig: RememberableDialogSubject, updateURL: NSURL) {
-    let dialog = createAlertController(.OptionalUpdate(updateURL: updateURL), message: updateConfig.message)
+    let dialog = createAlertController(type: .optionalUpdate(updateURL: updateURL), message: updateConfig.message)
 
-    displayAlertController(dialog) { () -> Void in
-      Memory.remember(updateConfig)
+    displayAlertController(alert: dialog) { () -> Void in
+        Memory.remember(item: updateConfig)
     }
   }
 
   // MARK: Custom Alert Controllers
 
   func createAlertController(type: DialogType, message: String) -> UIAlertController {
-    let alertController = UIAlertController(title: nil, message: message, preferredStyle: .Alert)
+    let alertController = UIAlertController(title: nil, message: message, preferredStyle: .alert)
 
     switch type {
-      case let .Alert(blocking):
+    case let .alert(blocking):
         if !blocking {
           alertController.addAction(dismissActon())
         }
 
-      case let .OptionalUpdate(updateURL):
+    case let .optionalUpdate(updateURL):
         alertController.addAction(dismissActon())
-        alertController.addAction(updateAction(updateURL))
+        alertController.addAction(updateAction(updateURL: updateURL))
 
-      case let .RequiredUpdate(updateURL):
-        alertController.addAction(updateAction(updateURL))
+    case let .requiredUpdate(updateURL):
+        alertController.addAction(updateAction(updateURL: updateURL))
     }
 
     return alertController
   }
 
-  func displayAlertController(alert: UIAlertController, completion: (() -> Void)?) {
-    dispatch_async(dispatch_get_main_queue()) { [] in
-      if let topViewController = self.topViewController() {
-        topViewController.presentViewController(alert, animated: true) {
-          if let completion = completion {
-            completion()
-          }
+    func displayAlertController(alert: UIAlertController, completion: (() -> Void)?) {
+        DispatchQueue.main.async {
+            if let topViewController = self.topViewController() {
+                topViewController.present(alert, animated: true) {
+                    if let completion = completion {
+                        completion()
+                    }
+                }
+            }
         }
-      }
     }
-  }
 
   func topViewController() -> UIViewController? {
-    return UIApplication.sharedApplication().keyWindow?.rootViewController
+    return UIApplication.shared.keyWindow?.rootViewController
   }
 
   // MARK: Custom Alert Actions
@@ -90,16 +89,16 @@ class DialogManager {
   private func dismissActon() -> UIAlertAction {
     return UIAlertAction(
         title: NSLocalizedString("Dismiss", comment: "Button title for dismissing the update AlertView"),
-        style: .Default) { _ in }
+        style: .default) { _ in }
   }
 
   private func updateAction(updateURL: NSURL) -> UIAlertAction {
     return UIAlertAction(
         title: NSLocalizedString("Update", comment: "Button title for accepting the update AlertView"),
-        style: .Default) { (action) -> Void in
-            if UIApplication.sharedApplication().canOpenURL(updateURL) {
-                dispatch_async(dispatch_get_main_queue()) { [] in
-                    UIApplication.sharedApplication().openURL(updateURL)
+        style: .default) { (_) -> Void in
+            if UIApplication.shared.canOpenURL(updateURL as URL) {
+                DispatchQueue.main.async {
+                    UIApplication.shared.openURL(updateURL as URL)
                 }
             }
         }

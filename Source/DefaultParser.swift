@@ -12,21 +12,22 @@ class DefaultParser: LaunchGateParser {
 
   typealias JSON = [String: AnyObject]
 
-  enum Error: LaunchGateError {
-    case UnableToParseConfigurationObject
-    case UnableToParseAlert
-    case UnableToParseOptionalUpdate
-    case UnableToParseRequiredUpdate
+    enum Error: LaunchGateError {
+
+    case unableToParseConfigurationObject
+    case unableToParseAlert
+    case unableToParseOptionalUpdate
+    case unableToParseRequiredUpdate
 
     var description: String {
       switch self {
-        case UnableToParseConfigurationObject:
+      case .unableToParseConfigurationObject:
           return "Unable to parse the configuration object (\"ios\") from JSON file."
-        case UnableToParseAlert:
+      case .unableToParseAlert:
           return "Unable to parse the alert configuration from JSON file."
-        case UnableToParseOptionalUpdate:
+      case .unableToParseOptionalUpdate:
           return "Unable to parse the optional update configuration from JSON file."
-        case UnableToParseRequiredUpdate:
+      case .unableToParseRequiredUpdate:
           return "Unable to parse the required update configuration from JSON file."
       }
     }
@@ -34,24 +35,24 @@ class DefaultParser: LaunchGateParser {
 
   func parse(jsonData: NSData) -> LaunchGateConfiguration? {
     do {
-      let json = try NSJSONSerialization.JSONObjectWithData(jsonData, options: [])
+        let json = try JSONSerialization.jsonObject(with: jsonData as Data, options: []) as? JSON
 
-      guard let config = json["ios"] as? JSON else { throw Error.UnableToParseConfigurationObject }
+        guard let config = json?["ios"] as? JSON else { throw Error.unableToParseConfigurationObject }
 
       var alert: AlertConfiguration?
       var optionalUpdate: UpdateConfiguration?
       var requiredUpdate: UpdateConfiguration?
 
       if let alertJSON = config["alert"] as? JSON {
-        alert = try DefaultParser.parseAlert(alertJSON)
+        alert = try DefaultParser.parseAlert(json: alertJSON)
       }
 
       if let optionalUpdateJSON = config["optionalUpdate"] as? JSON {
-        optionalUpdate = try DefaultParser.parseOptionalUpdate(optionalUpdateJSON)
+        optionalUpdate = try DefaultParser.parseOptionalUpdate(json: optionalUpdateJSON)
       }
 
       if let requiredUpdateJSON = config["requiredUpdate"] as? JSON {
-        requiredUpdate = try DefaultParser.parseRequiredUpdate(requiredUpdateJSON)
+        requiredUpdate = try DefaultParser.parseRequiredUpdate(json: requiredUpdateJSON)
       }
 
       return LaunchGateConfiguration(alert: alert, optionalUpdate: optionalUpdate, requiredUpdate: requiredUpdate)
@@ -69,22 +70,22 @@ class DefaultParser: LaunchGateParser {
   }
 
   private static func parseAlert(json: JSON) throws -> AlertConfiguration? {
-    guard let message = json["message"] as? String else { throw Error.UnableToParseAlert }
-    guard let blocking = json["blocking"] as? Bool else { throw Error.UnableToParseAlert }
+    guard let message = json["message"] as? String else { throw Error.unableToParseAlert }
+    guard let blocking = json["blocking"] as? Bool else { throw Error.unableToParseAlert }
 
     return AlertConfiguration(message: message, blocking: blocking)
   }
 
   private static func parseOptionalUpdate(json: JSON) throws -> UpdateConfiguration? {
-    guard let version = json["optionalVersion"] as? String else { throw Error.UnableToParseOptionalUpdate }
-    guard let message = json["message"] as? String else { throw Error.UnableToParseOptionalUpdate }
+    guard let version = json["optionalVersion"] as? String else { throw Error.unableToParseOptionalUpdate }
+    guard let message = json["message"] as? String else { throw Error.unableToParseOptionalUpdate }
 
     return UpdateConfiguration(version: version, message: message)
   }
 
   private static func parseRequiredUpdate(json: JSON) throws -> UpdateConfiguration? {
-    guard let version = json["minimumVersion"] as? String else { throw Error.UnableToParseRequiredUpdate }
-    guard let message = json["message"] as? String else { throw Error.UnableToParseRequiredUpdate }
+    guard let version = json["minimumVersion"] as? String else { throw Error.unableToParseRequiredUpdate }
+    guard let message = json["message"] as? String else { throw Error.unableToParseRequiredUpdate }
 
     return UpdateConfiguration(version: version, message: message)
   }

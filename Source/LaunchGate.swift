@@ -9,8 +9,7 @@
 import Foundation
 
 /// Custom internal error type
-typealias LaunchGateError = protocol<ErrorType, CustomStringConvertible>
-
+typealias LaunchGateError = Error & CustomStringConvertible
 
 public class LaunchGate {
 
@@ -51,7 +50,7 @@ public class LaunchGate {
 
   /// Check the configuration file and perform any appropriate action.
   public func check() {
-    performCheck(RemoteFileManager(remoteFileURL: configurationFileURL))
+    performCheck(remoteFileManager: RemoteFileManager(remoteFileURL: configurationFileURL))
   }
 
   // MARK: - Internal API
@@ -64,8 +63,8 @@ public class LaunchGate {
   */
   func performCheck(remoteFileManager: RemoteFileManager) {
     remoteFileManager.fetchRemoteFile { (jsonData) -> Void in
-      if let config = self.parser.parse(jsonData) {
-        self.displayDialogIfNecessary(config, dialogManager: self.dialogManager)
+        if let config = self.parser.parse(jsonData: jsonData) {
+            self.displayDialogIfNecessary(config: config, dialogManager: self.dialogManager)
       }
     }
   }
@@ -78,17 +77,17 @@ public class LaunchGate {
      - dialogManager: Manager object for the various alert dialogs
    */
   func displayDialogIfNecessary(config: LaunchGateConfiguration, dialogManager: DialogManager) {
-    if let reqUpdate = config.requiredUpdate, appVersion = currentAppVersion() {
-      if shouldShowRequiredUpdateDialog(reqUpdate, appVersion: appVersion) {
-        dialogManager.displayRequiredUpdateDialog(reqUpdate, updateURL: updateURL)
+    if let reqUpdate = config.requiredUpdate, let appVersion = currentAppVersion() {
+        if shouldShowRequiredUpdateDialog(updateConfig: reqUpdate, appVersion: appVersion) {
+            dialogManager.displayRequiredUpdateDialog(updateConfig: reqUpdate, updateURL: updateURL)
       }
-    } else if let optUpdate = config.optionalUpdate, appVersion = currentAppVersion() {
-      if shouldShowOptionalUpdateDialog(optUpdate, appVersion: appVersion) {
-        dialogManager.displayOptionalUpdateDialog(optUpdate, updateURL: updateURL)
+    } else if let optUpdate = config.optionalUpdate, let appVersion = currentAppVersion() {
+        if shouldShowOptionalUpdateDialog(updateConfig: optUpdate, appVersion: appVersion) {
+            dialogManager.displayOptionalUpdateDialog(updateConfig: optUpdate, updateURL: updateURL)
       }
     } else if let alert = config.alert {
-      if shouldShowAlertDialog(alert) {
-        dialogManager.displayAlertDialog(alert, blocking: alert.blocking)
+        if shouldShowAlertDialog(alertConfig: alert) {
+            dialogManager.displayAlertDialog(alertConfig: alert, blocking: alert.blocking)
       }
     }
   }
@@ -129,7 +128,7 @@ public class LaunchGate {
   }
 
   func currentAppVersion() -> String? {
-    return NSBundle.mainBundle().infoDictionary?["CFBundleShortVersionString"] as? String
+    return Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
   }
 
 }

@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 class RemoteFileManager {
 
   let remoteFileURL: NSURL
@@ -17,12 +16,12 @@ class RemoteFileManager {
     self.remoteFileURL = remoteFileURL
   }
 
-  func fetchRemoteFile(callback: (NSData) -> Void) {
-    performRemoteFileRequest(NSURLSession.sharedSession(), url: remoteFileURL, responseHandler: callback)
+    func fetchRemoteFile(callback: @escaping (NSData) -> Void) {
+    performRemoteFileRequest(session: URLSession.shared, url: remoteFileURL, responseHandler: callback)
   }
 
-  func performRemoteFileRequest(session: NSURLSession, url: NSURL, responseHandler: (data: NSData) -> Void) {
-    let task = session.dataTaskWithURL(url) { (data, response, error) -> Void in
+    func performRemoteFileRequest(session: URLSession, url: NSURL, responseHandler: @escaping (_ data: NSData) -> Void) {
+        let task = session.dataTask(with: url as URL) { (data, _, error) -> Void in
       if let error = error {
         print("LaunchGate — Error: \(error.localizedDescription)")
       }
@@ -32,7 +31,7 @@ class RemoteFileManager {
         return
       }
 
-      responseHandler(data: data)
+            responseHandler(data as NSData)
     }
 
     task.resume()

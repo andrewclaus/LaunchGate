@@ -8,23 +8,22 @@
 
 import Foundation
 
-
 struct Memory {
 
-  static var userPrefs: NSUserDefaults {
-    return NSUserDefaults.standardUserDefaults()
+    static var userPrefs: UserDefaults {
+        return UserDefaults.standard
   }
 
   static func remember(item: Rememberable) {
-    userPrefs.setObject(item.rememberString(), forKey: item.rememberKey())
+    userPrefs.set(item.rememberString(), forKey: item.rememberKey())
   }
 
   static func forget(item: Rememberable) {
-    userPrefs.removeObjectForKey(item.rememberKey())
+    userPrefs.removeObject(forKey: item.rememberKey())
   }
 
   static func contains(item: Rememberable) -> Bool {
-    if let storedString = userPrefs.stringForKey(item.rememberKey()) where storedString == item.rememberString() {
+    if let storedString = userPrefs.string(forKey: item.rememberKey()), storedString == item.rememberString() {
       return true
     }
 
